@@ -1,54 +1,50 @@
 package com.group.libraryapp.controller.user;
 
-import com.group.libraryapp.domain.user.Fruit;
-import com.group.libraryapp.domain.user.User;
 import com.group.libraryapp.dto.user.request.UserCreateRequest;
+import com.group.libraryapp.dto.user.request.UserUpdateRequest;
 import com.group.libraryapp.dto.user.response.UserResponse;
+import com.group.libraryapp.service.fruit.FruitService;
+import com.group.libraryapp.service.user.UserService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 public class UserController {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final UserService userService;
+    private final FruitService fruitService;
 
-    public UserController(JdbcTemplate jdbcTemplate) {  //의존성 주입
-        this.jdbcTemplate = jdbcTemplate;
+    public UserController(UserService userService, @Qualifier("main") FruitService fruitService) {  //의존성 주입
+        this.userService = userService;
+        this.fruitService = fruitService;
     }
 
     @PostMapping("/user") // POST /user
     public void saveUser(@RequestBody UserCreateRequest request) {
-        String sql = "INSERT INTO user (name, age) VALUES (?, ?)";
-        jdbcTemplate.update(sql, request.getName(), request.getAge()); //위에 ?에 순서대로 각각 데이터가 순서대로(이름, 나이) 매핑된다.
+        userService.saveUser(request);
     }
 
     @GetMapping("/user")
     public List<UserResponse> getUsers() {
-        String sql = "SELECT * FROM user";
-        return jdbcTemplate.query(sql, new RowMapper<UserResponse>() {
-            @Override
-            public UserResponse mapRow(ResultSet rs, int rowNum) throws SQLException {  //jdbcTemplate의 쿼리가 sql을 수행한 결과를 UserResponse로 바꿔주는 역할
-                long id = rs.getLong("id"); //rs가 쿼리 결과임
-                String name = rs.getString("name");
-                int age = rs.getInt("age");
-                return new UserResponse(id, name, age);
-            }
-        });
+        return userService.getUsers();
     }
 
+    @PutMapping("/user")
+    public void updateUser(@RequestBody UserUpdateRequest request) {
+        userService.updateUser(request);
+    }
 
-//    @GetMapping("/fruit")
-//    public Fruit fruit() {
-//        return new Fruit("바나나", 2000);
-//    }
+    @DeleteMapping("/user")
+    public void deleteUser(@RequestParam String name) {
+        userService.deleteUser(name);
+    }
+
+    @GetMapping("/user/error")
+    public void errorTest() {
+        throw new IllegalArgumentException();
+    }
 
 }
